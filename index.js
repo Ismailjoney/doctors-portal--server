@@ -23,23 +23,24 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
     try{
         const appionmentsOptionsCollections = client.db('doctorsPortal').collection('appionmentSlots')
         const bookingsCollections = client.db('doctorsPortal').collection('bookings')
+        const  usersCollections = client.db('doctorsPortal').collection('users')
 
 
         app.get('/appionmentoptions', async(req, res) => {
             const date = req.query.date;
-           // console.log(date)
+           //console.log(date)
             const query ={}
             const options = await appionmentsOptionsCollections.find(query).toArray();
            
-            
+           //date diye query kora hoyece jate j slots gula booking kora hoyece se gula cara baki gula treatment option a show korano jai 
             const bookingQuery = {appionmentDate : date}
-            const alreadyBooked  = await bookingsCollections.find(bookingQuery).toArray(); //booking options time and bookong name
-             
+            const alreadyBooked  = await bookingsCollections.find(bookingQuery).toArray();  
+             //console.log(alreadyBooked)
 
             options.forEach(singleOption => {
 
-                const optionBooked = alreadyBooked.filter(bookOption => bookOption.treatmentName === singleOption.name );
-                const bookedSlots = optionBooked.map(book => book.slot)
+                const optionBooked = alreadyBooked.filter(bookOption => bookOption.treatment === singleOption.name )
+                const bookedSlots = optionBooked.map(book => book.slot) 
                 const remainingSlots = singleOption.slots.filter(slot => !bookedSlots.includes(slot))
             
                 //console.log(singleOption.name, remainingSlots.length)
@@ -54,24 +55,40 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
         //booking post
         app.post('/bookings', async (req, res) => {
             const booking = req.body;
-            // console.log(booking);
+            //console.log(booking);
             const query = {
-                appointmentDate: booking.appointmentDate,
+                appionmentDate: booking.appionmentDate,
                 email: booking.email,
                 treatment: booking.treatment 
             }
+            //console.log(query)
+            const alReadyBooked = await bookingsCollections.find(query).toArray();
+            //console.log(alReadyBooked.length)
 
-            const alreadyBooked = await bookingsCollections.find(query).toArray();
-            console.log(alreadyBooked)
-            if (alreadyBooked.length){
-                const message = `You already have a booking on ${booking.appointmentDate}`
+            if(alReadyBooked.length){
+                const message =`you alredy hav a booking on ${booking.appionmentDate}`
                 return res.send({acknowledged: false, message})
             }
+
+             
             const resualt = await bookingsCollections.insertOne(booking)
             res.send(resualt)
         })
+        //get bookingsby email
+        app.get('/bookings', async(req,res) => {
+            const email = req.query.email;
+            console.log(email)
+            const query = { email: email}
+            const resualt = await bookingsCollections.find(query).toArray();
+            res.send(resualt)
+        })
 
-
+        //users information
+        app.post('/users', async(req,res) => {
+            const user = req.body;
+            const resualt = await usersCollections.insertOne(user);
+            res.send(resualt)
+        })
 
 
 
