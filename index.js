@@ -1,6 +1,7 @@
 const express = require('express')
 const cors = require('cors')
 const { MongoClient, ServerApiVersion } = require('mongodb');
+const jwt = require('jsonwebtoken');
 const port = process.env.PORT || 5000;
 require('dotenv').config()
 const app = express();
@@ -74,7 +75,7 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
             const resualt = await bookingsCollections.insertOne(booking)
             res.send(resualt)
         })
-        //get bookingsby email
+        //get bookings by email
         app.get('/bookings', async(req,res) => {
             const email = req.query.email;
             console.log(email)
@@ -82,6 +83,20 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
             const resualt = await bookingsCollections.find(query).toArray();
             res.send(resualt)
         })
+        //jwt --> server a jodi user thake tahle token dibe (101 line a user server create kor a hoyece)
+        app.get('/jwt', async(req, res) => {
+            const email = req.query.email 
+            const query ={ email: email}
+            const user = await usersCollections.findOne(query)
+            if(user){
+                const token = jwt.sign({email}, process.env.ACCESS_TOKEN, { expiresIn : '7d' })
+                return res.send ({accessToken : token})
+            }
+            console.log(user)
+            res.status(403).send({ accessToken : ''})
+        })
+
+
 
         //users information
         app.post('/users', async(req,res) => {
