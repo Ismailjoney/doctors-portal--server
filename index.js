@@ -16,8 +16,32 @@ app.use(express.json())
 
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.i8hxp3j.mongodb.net/?retryWrites=true&w=majority`;
-console.log(uri)
+ 
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
+
+
+ function jwtVerify(req, res, next){
+    //console.log(req.headers.authorization);
+    const authHeader = req.headers.authorization;
+    //console.log(authHeader)
+
+    if(!authHeader){
+        return res.status(401).send('unAuthorazid access')
+    }
+    //split kore token k alada kora hoyece
+    const token = authHeader.split(' ')[1]
+    //console.log(token);
+
+    jwt.verify(token, process.env.ACCESS_TOKEN, function(err, decoded){
+        if(err){
+            return res.status(403).send({message : 'forbiden access'})
+        }
+        req.decoded = decoded;
+        next()
+    })
+    
+    
+ }
  
 
  async function run(){
@@ -75,27 +99,42 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
             const resualt = await bookingsCollections.insertOne(booking)
             res.send(resualt)
         })
+
         //get bookings by email
-        app.get('/bookings', async(req,res) => {
+        app.get('/bookings', jwtVerify, async(req,res) => {
             const email = req.query.email;
-            console.log(email)
+            // console.log(email)
+            const decodedEmail = req.decoded.email;
+            // console.log(decodedEmail)
+
+            if (email !== decodedEmail) {
+                return res.status(403).send({ message: 'forbidden access' });
+            }
+
             const query = { email: email}
             const resualt = await bookingsCollections.find(query).toArray();
             res.send(resualt)
         })
-        //jwt --> server a jodi user thake tahle token dibe (101 line a user server create kor a hoyece)
+
+        //jwt --> server a jodi user thake tahle token dibe (101 line a user server create kora hoyece)
         app.get('/jwt', async(req, res) => {
             const email = req.query.email 
-            const query ={ email: email}
+             
+            const query ={ email: email }
             const user = await usersCollections.findOne(query)
-            if(user){
-                const token = jwt.sign({email}, process.env.ACCESS_TOKEN, { expiresIn : '7d' })
+            if(user) {
+                const token = jwt.sign({ email }, process.env.ACCESS_TOKEN, { expiresIn : '7d' })
                 return res.send ({accessToken : token})
             }
-            console.log(user)
+            
             res.status(403).send({ accessToken : ''})
         })
 
+        app.get('/users', async( req, res) => {
+            const query = {}
+            const users = await usersCollections.find(query).toArray()
+            res.send(users);
+        })
 
 
         //users information
