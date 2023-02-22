@@ -1,6 +1,6 @@
 const express = require('express')
 const cors = require('cors')
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const jwt = require('jsonwebtoken');
 const port = process.env.PORT || 5000;
 require('dotenv').config()
@@ -75,8 +75,6 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
             res.send(options)
         })
 
-
-
         //booking post
         app.post('/bookings', async (req, res) => {
             const booking = req.body;
@@ -122,11 +120,11 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
              
             const query ={ email: email }
             const user = await usersCollections.findOne(query)
+
             if(user) {
                 const token = jwt.sign({ email }, process.env.ACCESS_TOKEN, { expiresIn : '7d' })
                 return res.send ({accessToken : token})
             }
-            
             res.status(403).send({ accessToken : ''})
         })
 
@@ -134,6 +132,14 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
             const query = {}
             const users = await usersCollections.find(query).toArray()
             res.send(users);
+        })
+
+        //check kortece admin ki na  jodi hoi tahle all user k dekhte dbe. useAdmin hook a kaj kora hoyece email diye kora hoyece karon user jkn login korbe tkn id thake na email thake tai email diye kora hoyece
+        app.get('/users/admin/:email', async (req, res) => {
+            const email = req.params.email;
+            const query = { email }
+            const user = await usersCollections.findOne(query);
+            res.send({ isAdmin: user?.role === 'admin' });
         })
 
 
@@ -144,6 +150,33 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
             res.send(resualt)
         })
 
+
+        //make admin api and create admin: ----> next work '/users/admin/:email'  this api
+        app.put('/users/admin/:id', jwtVerify, async( req, res) => {
+            //j admin korbe se jodi admin na hoi tahle se admin korte parbe na   start
+            const decodedEmail = req.decoded.email;
+            const query = { email: decodedEmail };
+            const user = await usersCollections.findOne(query);
+
+            if (user?.role !== 'admin') {
+                return res.status(403).send({ message: 'forbidden access' })
+            }
+            //finish
+
+
+            //make admin work 
+            const id = req.params.id;
+            const filter = { _id: new ObjectId(id) }
+            const options = { upsert: true };
+            const updatedDoc = {
+                $set: {
+                    role: 'admin'
+                }
+            }
+            const result = await usersCollections.updateOne(filter, updatedDoc, options);
+            res.send(result);
+        })
+        
 
 
 
