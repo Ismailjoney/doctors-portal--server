@@ -75,6 +75,16 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
             res.send(options)
         })
 
+        //get only specialty name from appionmentsOptionsCollections
+        //find(query).project({ name: 1})----> diye specific data select kora hoi.
+        //jmn project({ name : 1}) --> name database a save cilo abong segula diye sudhu matro sob name gula k pawa gece. same vabe 
+        //project({ slots : 1}) ----> dile sokol slots gula k pawa jabe
+        app.get('/appionmentsspecialty', async( req, res) => {
+            const query ={}
+            const resualt = await appionmentsOptionsCollections.find(query).project({ name: 1}).toArray()
+            res.send(resualt)
+        })
+
         //booking post
         app.post('/bookings', async (req, res) => {
             const booking = req.body;
@@ -134,10 +144,10 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
             res.send(users);
         })
 
-        //check kortece admin ki na  jodi hoi tahle all user k dekhte dbe. useAdmin hook a kaj kora hoyece email diye kora hoyece karon user jkn login korbe tkn id thake na email thake tai email diye kora hoyece
+        //check kortece admin ki na  jodi hoi tahle allUser route k dekhte dbe. useAdmin hook a kaj kora hoyece. email diye kora hoyece karon user jkn login korbe tkn id thake na email thake tai email diye kora hoyece
         app.get('/users/admin/:email', async (req, res) => {
             const email = req.params.email;
-            const query = { email }
+            const query = { email : email }
             const user = await usersCollections.findOne(query);
             res.send({ isAdmin: user?.role === 'admin' });
         })
