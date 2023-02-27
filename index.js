@@ -49,6 +49,21 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
         const appionmentsOptionsCollections = client.db('doctorsPortal').collection('appionmentSlots')
         const bookingsCollections = client.db('doctorsPortal').collection('bookings')
         const  usersCollections = client.db('doctorsPortal').collection('users')
+        const  doctorsCollections = client.db('doctorsPortal').collection('doctors')
+
+        //NOTE: make sure allwayes use after jwtVerify function
+        //verify Admin
+        const verifyAdmin = async (req, res, next) => {
+            //console.log(req.decoded.email)
+            const decodedEmail = req.decoded.email;
+            const query = { email: decodedEmail };
+            const user = await usersCollections.findOne(query);
+
+            if (user?.role !== 'admin') {
+                return res.status(403).send({ message: 'forbidden access' })
+            }
+            next()
+        }
 
 
         app.get('/appionmentoptions', async(req, res) => {
@@ -162,18 +177,9 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 
 
         //make admin api and create admin: ----> next work '/users/admin/:email'  this api
-        app.put('/users/admin/:id', jwtVerify, async( req, res) => {
-            //j admin korbe se jodi admin na hoi tahle se admin korte parbe na   start
-            const decodedEmail = req.decoded.email;
-            const query = { email: decodedEmail };
-            const user = await usersCollections.findOne(query);
-
-            if (user?.role !== 'admin') {
-                return res.status(403).send({ message: 'forbidden access' })
-            }
-            //finish
-
-
+        //jwtVerify-----> token verify kore
+        //verifyAdmin---> admin verify kore
+        app.put('/users/admin/:id', jwtVerify, verifyAdmin, async( req, res) => {
             //make admin work 
             const id = req.params.id;
             const filter = { _id: new ObjectId(id) }
@@ -185,6 +191,30 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
             }
             const result = await usersCollections.updateOne(filter, updatedDoc, options);
             res.send(result);
+        })
+
+        //get doctors
+        app.get('/doctors', jwtVerify, verifyAdmin, async( req, res) => {
+            const query = {}
+            const doctors = await doctorsCollections.find(query).toArray();
+            res.send(doctors)
+        })
+
+
+        //doctor collection
+        app.post('/doctors', jwtVerify, verifyAdmin, async( req, res )=> {
+            const doctor = req.body
+            const resualt = await doctorsCollections.insertOne(doctor)
+            res.send(resualt)
+        })
+
+        //delete doctor
+        app.delete('/doctors/:id', jwtVerify, verifyAdmin, async(req, res) => {
+            const id = req.params.id;
+            console.log(id)
+            const filter = {_id : new ObjectId(id)}
+            const resualt = await doctorsCollections.deleteOne(filter);
+            res.send(resualt)
         })
         
 
