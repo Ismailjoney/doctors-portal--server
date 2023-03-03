@@ -193,7 +193,7 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
             res.send(result);
         })
 
-        //get doctors
+        //get doctors..
         app.get('/doctors', jwtVerify, verifyAdmin, async( req, res) => {
             const query = {}
             const doctors = await doctorsCollections.find(query).toArray();
