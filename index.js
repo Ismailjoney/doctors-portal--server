@@ -126,7 +126,7 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
         //get bookings by email
         app.get('/bookings', jwtVerify, async(req,res) => {
             const email = req.query.email;
-            // console.log(email)
+             console.log(email)
             const decodedEmail = req.decoded.email;
             // console.log(decodedEmail)
 
@@ -136,6 +136,14 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 
             const query = { email: email}
             const resualt = await bookingsCollections.find(query).toArray();
+            res.send(resualt)
+        })
+
+        //get specific booking
+        app.get('/bookings/:id', async(req,res) => {
+            const id = req.params.id;
+            const query = { _id : new ObjectId(id)}
+            const resualt = await bookingsCollections.findOne(query)
             res.send(resualt)
         })
 
@@ -192,6 +200,19 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
             const result = await usersCollections.updateOne(filter, updatedDoc, options);
             res.send(result);
         })
+
+        //temporary to update price options bookings: when change the option price call the api by default is comment
+        // app.get('/addprice', async(req,res) => {
+        //     const  filter ={}
+        //     const options ={ upsert : true }
+        //      const updatedDoc = {
+        //         $set: {
+        //              price: 99
+        //         }
+        //     }
+        //     const resualt = await appionmentsOptionsCollections.updateMany(filter, updatedDoc,options)
+        //     res.send(resualt)
+        // })
 
         //get doctors..
         app.get('/doctors', jwtVerify, verifyAdmin, async( req, res) => {
