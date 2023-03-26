@@ -5,6 +5,7 @@ const jwt = require('jsonwebtoken');
 const port = process.env.PORT || 5000;
 require('dotenv').config()
 const app = express();
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
 
 //middleware
@@ -146,6 +147,31 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
             const resualt = await bookingsCollections.findOne(query)
             res.send(resualt)
         })
+
+
+
+        //PAYMENT
+        app.post("/create-payment-intent", async (req, res) =>{
+            const booking = req.body;
+            console.log(booking)
+            const price = booking.price;
+            const amount = price * 100;
+
+            const paymentIntent = await stripe.paymentIntents.create({
+                currency: "usd",
+                amount : amount,
+                "payment_method_types": [
+                    "card"
+                  ],
+            })
+
+            res.send({
+                clientSecret: paymentIntent.client_secret,
+              });
+
+
+        })
+
 
         //jwt --> server a jodi user thake tahle token dibe (101 line a user server create kora hoyece)
         app.get('/jwt', async(req, res) => {
