@@ -51,6 +51,7 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
         const bookingsCollections = client.db('doctorsPortal').collection('bookings')
         const  usersCollections = client.db('doctorsPortal').collection('users')
         const  doctorsCollections = client.db('doctorsPortal').collection('doctors')
+        const  paymentsCollections = client.db('doctorsPortal').collection('payments')
 
         //NOTE: make sure allwayes use after jwtVerify function
         //verify Admin
@@ -170,6 +171,13 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
               });
 
 
+        })
+
+
+        app.post('/payments', async(req,res) => {
+            const payment = req.body;
+            const resualt = await paymentsCollections.insertOne(payment)
+            res.send(resualt)
         })
 
 
