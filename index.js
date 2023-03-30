@@ -128,7 +128,7 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
         //get bookings by email
         app.get('/bookings', jwtVerify, async(req,res) => {
             const email = req.query.email;
-             console.log(email)
+            //  console.log(email)
             const decodedEmail = req.decoded.email;
             // console.log(decodedEmail)
 
@@ -154,7 +154,6 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
         //PAYMENT
         app.post("/create-payment-intent", async (req, res) =>{
             const booking = req.body;
-            console.log(booking)
             const price = booking.price;
             const amount = price * 100;
 
@@ -177,6 +176,15 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
         app.post('/payments', async(req,res) => {
             const payment = req.body;
             const resualt = await paymentsCollections.insertOne(payment)
+            const id = payment.bookingId;
+            const  filter = { _id : new ObjectId(id)}
+            const updatedDoc = {
+                $set : {
+                    paid : true,
+                    transtionId : payment.transctionId
+                }
+            }
+            const updateResualt = await bookingsCollections.updateOne(filter, updatedDoc)
             res.send(resualt)
         })
 
